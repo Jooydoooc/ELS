@@ -763,23 +763,26 @@
                 English Through Reading is designed to help you improve your vocabulary and reading comprehension. 
                 Study texts, learn new words through interactive flashcards, and test your knowledge with various exercises.
             </p>
-            <!-- FIX: removed onsubmit, we attach listener in app.js -->
-            <form id="welcomeForm">
+
+            <!-- NOT A FORM ANYMORE -->
+            <div id="welcomeInputs">
                 <div class="form-group">
                     <label>Name</label>
-                    <input type="text" id="nameInput" required>
+                    <input type="text" id="nameInput">
                 </div>
                 <div class="form-group">
                     <label>Surname</label>
-                    <input type="text" id="surnameInput" required>
+                    <input type="text" id="surnameInput">
                 </div>
                 <div class="form-group">
                     <label>Group Name</label>
-                    <input type="text" id="groupInput" required>
+                    <input type="text" id="groupInput">
                 </div>
                 <div class="datetime-display" id="datetimeDisplay"></div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Enter</button>
-            </form>
+                <button type="button" class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="enterApp()">
+                    Enter
+                </button>
+            </div>
         </div>
     </div>
 
@@ -938,7 +941,6 @@
         </div>
     </div>
 
-    <!-- App script -->
     <script src="app.js"></script>
 </body>
 </html>
