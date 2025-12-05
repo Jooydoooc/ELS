@@ -1,91 +1,85 @@
 // api/sendResult.js
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.status(405).json({ ok: false, error: 'Method not allowed' });
+module.exports = async (req, res) => {
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
     return;
   }
 
-  const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID } = process.env;
+  const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-    console.warn('Telegram env variables are not set.');
-    res.status(200).json({ ok: false, error: 'Telegram not configured' });
+  if (!TOKEN || !CHAT_ID) {
+    console.warn(
+      "Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID in environment. Skipping send."
+    );
+    res.status(200).json({ ok: true, message: "Telegram not configured" });
     return;
   }
 
   try {
+    const body = req.body || {};
+
     const {
-      percentage,
-      total,
-      status,
-      extraDetails,
-      isGrandTest,
+      percentage = 0,
+      total = 0,
+      status = "Unknown",
+      extraDetails = "",
+      isGrandTest = false,
       selectedTestSize,
       unit,
-      studentData,
-      score
-    } = req.body || {};
+      studentData = {},
+      score = {},
+    } = body;
 
-    const safePercentage = isNaN(percentage) ? 0 : percentage;
-    const safeTotal = total || 0;
+    const name = (studentData.name || "").trim() || "Unknown";
+    const surname = (studentData.surname || "").trim() || "";
+    const group = (studentData.group || "").trim() || "Unknown group";
 
-    let testName;
-    if (isGrandTest) {
-      testName = `Grand Test (${selectedTestSize || '?'} questions)`;
-    } else if (unit) {
-      testName = `Unit ${unit.id}: ${unit.title}`;
-    } else {
-      testName = 'Unit Test';
-    }
-
-    const name = studentData?.name || 'Unknown';
-    const surname = studentData?.surname || '';
-    const group = studentData?.group || 'Unknown';
-    const correct = score?.correct ?? 0;
-    const wrong = score?.wrong ?? 0;
+    const mode = isGrandTest
+      ? `Grand Test (${selectedTestSize || "?"} questions)`
+      : unit
+      ? `Unit ${unit.id}: ${unit.title}`
+      : "Unit Test";
 
     const lines = [
-      '📘 Test Name: ELS – English Through Reading',
-      `🧑‍🎓 Student: ${name} ${surname}`,
+      "📘 Test Name: ELS – English Through Reading",
+      `🧑‍🎓 Student: ${name} ${surname}`.trim(),
       `👥 Group: ${group}`,
-      `📚 Mode: ${testName}`,
+      `📚 Mode: ${mode}`,
       `📅 Date/Time: ${new Date().toLocaleString()}`,
-      `📊 Score: ${correct}/${safeTotal} (${safePercentage}%)`,
-      `${status === 'Completed' ? '✅' : '⚠️'} Status: ${status}`,
-      `✅ Correct: ${correct}`,
-      `❌ Wrong: ${wrong}`
+      `📊 Score: ${score.correct || 0}/${total} (${percentage}%)`,
+      `${status === "Completed" ? "✅" : "⚠️"} Status: ${status}`,
     ];
 
     if (extraDetails) {
-      lines.push('');
+      lines.push("");
       lines.push(extraDetails);
     }
 
-    const text = lines.join('\n');
+    const text = lines.join("\n");
 
-    const tgResponse = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text
-        })
-      }
-    );
+    const url = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
 
-    if (!tgResponse.ok) {
-      const body = await tgResponse.text().catch(() => '');
-      console.error('Telegram error:', tgResponse.status, body);
-      res.status(200).json({ ok: false, error: 'Telegram request failed' });
+    const tgRes = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text,
+      }),
+    });
+
+    if (!tgRes.ok) {
+      const errorText = await tgRes.text();
+      console.error("Telegram error:", errorText);
+      res.status(500).json({ error: "Telegram API error", details: errorText });
       return;
     }
 
     res.status(200).json({ ok: true });
-  } catch (error) {
-    console.error('sendResult handler error:', error);
-    res.status(500).json({ ok: false, error: 'Internal server error' });
+  } catch (err) {
+    console.error("sendResult API error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
-}
+};
