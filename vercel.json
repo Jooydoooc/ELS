@@ -1,13 +1,12 @@
 {
   "version": 2,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "app.js", "use": "@vercel/static" },
+    { "src": "api/sendResult.js", "use": "@vercel/node" }
+  ],
   "routes": [
-    {
-      "src": "/api/sendResult",
-      "dest": "/api/sendResult.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "src": "/api/sendResult", "dest": "/api/sendResult.js" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
