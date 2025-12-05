@@ -763,7 +763,8 @@
                 English Through Reading is designed to help you improve your vocabulary and reading comprehension. 
                 Study texts, learn new words through interactive flashcards, and test your knowledge with various exercises.
             </p>
-            <form id="welcomeForm" onsubmit="enterApp(event)">
+            <!-- FIX: removed onsubmit, we attach listener in app.js -->
+            <form id="welcomeForm">
                 <div class="form-group">
                     <label>Name</label>
                     <input type="text" id="nameInput" required>
