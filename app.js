@@ -237,6 +237,13 @@ window.onload = function () {
   setInterval(updateDateTime, 1000);
   loadSavedData();
   renderUnits();
+
+  // 🔧 IMPORTANT FIX: attach submit listener here
+  const welcomeForm = document.getElementById('welcomeForm');
+  if (welcomeForm) {
+    welcomeForm.addEventListener('submit', enterApp);
+  }
+
   if ('speechSynthesis' in window) {
     loadVoices();
   } else {
@@ -271,16 +278,19 @@ function updateDateTime() {
   document.getElementById('datetimeDisplay').textContent = now.toLocaleDateString('en-US', options);
 }
 
-// Enter app
-function enterApp(event) {
-  event.preventDefault();
+// ✅ Enter app – now safe even if event is missing
+function enterApp(e) {
+  if (e && e.preventDefault) {
+    e.preventDefault();
+  }
+
   const name = document.getElementById('nameInput').value.trim();
   const surname = document.getElementById('surnameInput').value.trim();
   const group = document.getElementById('groupInput').value.trim();
 
   if (!name || !surname || !group) {
     alert('Please fill all fields');
-    return;
+    return false;
   }
 
   studentData.name = name;
@@ -294,6 +304,9 @@ function enterApp(event) {
   document.getElementById('welcomePage').classList.add('hidden');
   document.getElementById('mainPage').classList.remove('hidden');
   document.getElementById('globalHeader').classList.remove('hidden');
+
+  // returning false is extra safety to stop default navigation
+  return false;
 }
 
 // Render units
@@ -387,7 +400,7 @@ function readText() {
 function changeFontSize(delta) {
   fontSize += delta * 2;
   fontSize = Math.max(14, Math.min(28, fontSize));
-  document.getElementById('textContent').style.fontSize = fontSize + 'px';
+  document.getElementById('textContent').style.fontSize = `${fontSize}px`;
 }
 
 // Flashcards
@@ -617,7 +630,7 @@ function showQuestion() {
   const progress = ((currentQuestion + 1) / exerciseQuestions.length) * 100;
 
   document.getElementById('questionCounter').textContent = `Question ${currentQuestion + 1} / ${exerciseQuestions.length}`;
-  document.getElementById('exerciseProgress').style.width = progress + '%';
+  document.getElementById('exerciseProgress').style.width = `${progress}%`;
   document.getElementById('questionText').textContent = question.text;
 
   const optionsContainer = document.getElementById('optionsContainer');
@@ -828,7 +841,52 @@ function beginGrandTest() {
 
   types.forEach(type => {
     const shuffled = [...allWords].sort(() => Math.random() - 0.5).slice(0, questionsPerType);
-    generateExerciseQuestions(shuffled, type, questionsPerType);
+    // NOTE: generateExerciseQuestions resets the list, so we build manually here:
+    shuffled.forEach(correctWord => {
+      const wrongPool = allWords.filter(w => w !== correctWord);
+      const wrongWords = wrongPool.sort(() => Math.random() - 0.5).slice(0, 3);
+      const optionsCandidates = [correctWord, ...wrongWords].sort(() => Math.random() - 0.5);
+
+      let question = {};
+      switch (type) {
+        case 'definition':
+          question = {
+            text: correctWord.word,
+            options: optionsCandidates.map(w => w.definition),
+            correct: correctWord.definition,
+            type: 'Matching Definition'
+          };
+          break;
+        case 'engToUz':
+          question = {
+            text: correctWord.word,
+            options: optionsCandidates.map(w => w.translation),
+            correct: correctWord.translation,
+            type: 'English → Uzbek'
+          };
+          break;
+        case 'uzToEng':
+          question = {
+            text: correctWord.translation,
+            options: optionsCandidates.map(w => w.word),
+            correct: correctWord.word,
+            type: 'Uzbek → English'
+          };
+          break;
+        case 'gapfill':
+          const sentence = `The concept of ${correctWord.word} is important in modern society.`;
+          question = {
+            text: sentence.replace(correctWord.word, '______'),
+            options: optionsCandidates.map(w => w.word),
+            correct: correctWord.word,
+            type: 'Gap-Filling'
+          };
+          break;
+        default:
+          break;
+      }
+      exerciseQuestions.push(question);
+    });
   });
 
   exerciseQuestions.sort(() => Math.random() - 0.5);
