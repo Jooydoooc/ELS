@@ -1,0 +1,11 @@
+{
+  "name": "els-english-through-reading",
+  "version": "1.0.0",
+  "description": "ELS – English Through Reading (Versage 1)",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "npx serve ."
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
